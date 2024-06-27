@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "zbricks"
+version = "0.1.0"
+description = ""
+authors = ["zdeyn <79044233+zdeyn@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "zbricks", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+Flask = "^3.0.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
