@@ -25,13 +25,13 @@ jobs:
         run: uv sync
 
       - name: Run tests
-        run: uv pip run pytest -sv
+        run: pytest -sv
 
       - name: Show dynamic version
-        run: uv pip run hatch version
+        run: hatch version
 
       - name: Build package
-        run: uv pip run hatch build
+        run: hatch build
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
