@@ -1,7 +1,6 @@
 [project]
 name = "zbricks"
-# version is now managed by hatch-vcs
-# version = "0.1.0"
+# version is managed by hatch-vcs
 dynamic = ["version"]
 description = "zBricks - build cool stuff"
 readme = "README.md"
