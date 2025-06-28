@@ -1,3 +1,5 @@
+src/zbricks/_version.py
+
 uv.lock
 .python-version
 py.typed
@@ -63,4 +65,3 @@ docs/_build/
 /site
 
 
-src/zbricks/_version.py
