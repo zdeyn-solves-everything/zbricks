@@ -1,7 +1,4 @@
 src/zbricks/_version.py
-
-src/zbricks/_version.py
-
 uv.lock
 .python-version
 py.typed
