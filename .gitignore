@@ -62,3 +62,5 @@ docs/_build/
 # mkdocs documentation
 /site
 
+
+src/zbricks/_version.py
