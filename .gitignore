@@ -1,3 +1,5 @@
+src/zbricks/_version.py
+
 uv.lock
 .python-version
 py.typed
@@ -59,10 +61,3 @@ docs/_build/
 # mkdocs documentation
 /site
 
-# Ruff stuff:
-.ruff_cache/
-
-# PyPI configuration file
-.pypirc
-
-src/zbricks/_version.py
