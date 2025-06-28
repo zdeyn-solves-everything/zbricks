@@ -25,7 +25,7 @@ jobs:
         run: uv sync --dev
 
       - name: Run tests
-        run: pytest -sv
+        run: uv run pytest -sv
 
       - name: Show dynamic version
         run: hatch version
