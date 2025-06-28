@@ -1,5 +1,4 @@
 src/zbricks/_version.py
-
 uv.lock
 .python-version
 py.typed
@@ -30,7 +29,6 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-
 # Environments
 .env
 .envrc
@@ -56,10 +54,8 @@ coverage.xml
 .pytest_cache/
 cover/
 
-
 # Sphinx documentation
 docs/_build/
-
 
 # mkdocs documentation
 /site
