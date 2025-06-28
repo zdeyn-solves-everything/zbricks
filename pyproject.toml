@@ -1,0 +1,26 @@
+[project]
+name = "zbricks"
+version = "0.1.0"
+description = "zBricks - build cool stuff"
+readme = "README.md"
+authors = [
+    { name = "zdeyn", email = "zdeyn@zdeyn.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-doctestplus>=1.4.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --doctest-glob=README.md"
