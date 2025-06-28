@@ -28,10 +28,10 @@ jobs:
         run: uv run pytest -sv
 
       - name: Show dynamic version
-        run: hatch version
+        run: uv run hatch version
 
       - name: Build package
-        run: hatch build
+        run: uv run hatch build
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
