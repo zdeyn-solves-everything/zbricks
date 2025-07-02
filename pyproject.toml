@@ -9,7 +9,16 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "jinja2>=3.1.6",
     "pydantic>=2.0",
+    "starlette>=0.47.1",
+    "uvicorn>=0.35.0",
+]
+
+[project.optional-dependencies]
+examples = [
+    "httpie>=3.2.4",
+    "httpx>=0.28.1",
 ]
 
 [build-system]
@@ -20,10 +29,15 @@ build-backend = "hatchling.build"
 dev = [
     "hatch>=1.7.0",
     "hatch-vcs>=0.5.0",
+    "httpie>=3.2.4",
+    "httpx>=0.28.1",
     "pytest>=8.0",
     "pytest-asyncio>=1.0.0",
     "pytest-doctestplus>=1.4.0",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 source = "vcs"
@@ -31,5 +45,17 @@ source = "vcs"
 [tool.hatch.build.hooks.vcs]
 version-file = "src/zbricks/_version.py"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/zbricks"]
+
 [tool.pytest.ini_options]
+testpaths = ["tests", "examples/*/tests"]
 addopts = "--doctest-modules --doctest-glob=README.md"
+
+[tool.hatch.envs.examples]
+dependencies = [
+    "pytest>=8.0",
+    "pytest-asyncio>=1.0.0",
+    "httpx>=0.28.1",
+]
+

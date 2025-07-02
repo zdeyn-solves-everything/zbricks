@@ -1,0 +1,26 @@
+[project]
+name = "zbricks-hello-world-example"
+version = "0.1.0"
+description = "Hello World example for zBricks"
+dependencies = [
+    "starlette>=0.47.1",
+    "uvicorn>=0.35.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=1.0.0",
+    "httpx>=0.28.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+
+# Note: This example is designed to run from the parent zbricks project
+# Use: cd ../../ && uv run python -m examples.01-hello-world.app

@@ -1,78 +1,61 @@
 # zbricks
-zBricks - build cool stuff
+zBricks - build cool stuff with Starlette
 
 ---
 
-## Automated Python Package Workflow (2025)
+## What is this project?
 
-This project uses a modern, robust, and developer-friendly workflow for Python package development, testing, and release automation.
+zBricks is a modern Python toolkit for building web applications using Starlette and friends. It provides:
 
-### Key Features
-- **Dynamic Versioning:**
-  - Uses `hatch` and `hatch-vcs` for automatic versioning from git tags/commits.
-- **Dependency Management:**
-  - Uses `uv` for fast, reproducible dependency installs (see `uv.lock`).
-- **Branch Strategy:**
-  - `main`: Stable, tagged releases only.
-  - `dev`: Active development, always up-to-date with `main`.
-- **CI/CD Automation:**
-  - **Dev Branch:** On every push, runs tests, builds, and uploads artifacts.
-  - **Main Branch:** On every push, runs tests, builds, uploads artifacts, and (optionally) creates a GitHub Release.
-  - **Tagged Release:** On every tag push (e.g., `v0.1.1`), runs full release workflow and creates a GitHub Release with artifacts.
-- **Re-usable Tag Testing:**
-  - You can force-push the same tag (e.g., `v0.1.1`) to repeatedly test the release workflow without polluting release history.
-- **GitHub CLI Integration:**
-  - Use `gh` to monitor workflow runs, inspect logs, and manage releases from the terminal.
+- **Smart templating** with automatic template discovery and inheritance
+- **Static file handling** with fallback support
+- **Modular architecture** for clean, maintainable code
+- **Built-in middleware** for common web app needs
 
-### Typical Developer Workflow
-1. **Develop on `dev` branch.**
-2. **Merge `main` into `dev` regularly to keep up-to-date:**
-   ```bash
-   git checkout dev
-   git pull origin dev
-   git pull origin main --no-rebase
-   # Resolve any conflicts, commit, and push
-   git push origin dev
-   ```
-3. **When ready for release:**
-   - Merge `dev` into `main`.
-   - Tag a new release (e.g., `v0.1.2`).
-   - Push the tag to trigger the release workflow.
-4. **To test the release workflow repeatedly:**
-   ```bash
-   git tag -d v0.1.1
-   git push origin :refs/tags/v0.1.1
-   git tag v0.1.1
-   git push --force origin v0.1.1
-   ```
+## Quick Start
 
-### GitHub Actions Workflows
-- `.github/workflows/ci-dev.yml`: Runs on `dev` branch pushes.
-- `.github/workflows/release-main.yml`: Runs on `main` branch pushes and on tag pushes (`v*`).
+### Install the library
+```bash
+pip install zbricks
+```
 
-### Monitoring CI/CD
-- Use GitHub CLI:
-  ```bash
-  gh run list -L 5
-  gh run view <run-id>
-  ```
+### Install with examples
+```bash
+pip install zbricks[examples]
+```
 
----
+### Basic Usage
+```python
+from starlette.applications import Starlette
+from starlette.routing import Route
+from zbricks.core.templating import render_template
+
+async def hello_world(request):
+    return render_template(request, "index.html", {"message": "Hello, world!"})
+
+app = Starlette(routes=[Route("/", endpoint=hello_world)])
+```
 
 ## Project Structure
-- `src/zbricks/`: Source code
-- `tests/`: Tests
-- `pyproject.toml`: Project metadata and build config
-- `uv.lock`: Locked dependencies
-- `.gitignore`: Clean, deduplicated, up-to-date
 
----
+- **`src/zbricks/`** - Main library source code
+- **`tests/`** - Library tests  
+- **`examples/`** - Example applications with their own tests
+- **`docs/`** - Documentation
 
-## Requirements
-- Python 3.13+
-- `uv`, `hatch`, `hatch-vcs`, `pytest`, `gh` (GitHub CLI)
+## Examples
 
----
+See the `examples/` directory for complete working examples:
+
+- **`01-hello-world/`** - Minimal example showing template inheritance
+- More examples coming soon!
+
+## Documentation
+
+- **[Development Guide](docs/DEVELOPMENT.md)** - Development workflow, contribution guidelines, and technical details
+- **[Architecture](docs/ARCHITECTURE.md)** - Library architecture and design principles  
+- **[Examples Guide](docs/EXAMPLES.md)** - Complete guide to all examples and how to create new ones
 
 ## License
+
 See `LICENSE` file.
