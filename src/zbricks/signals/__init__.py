@@ -1,3 +1,9 @@
+"""
+Robust, type-safe, and ergonomic signal/event system for Python.
+Supports multiple handler signatures, decorator and imperative APIs, unique subscription management,
+and a global, swappable registry.
+"""
+
 import inspect
 import uuid
 from collections.abc import Callable
@@ -23,15 +29,17 @@ __all__ = ["BaseSignal", "Signal", "subscribe"]
 
 # --- Type Definitions ---
 S = TypeVar("S", bound="BaseSignal")
-
 Payload = dict[str, Any] | None
 
 def default_filter(signal: Any, payload: Payload = None) -> bool:
+    """Default filter that always returns True."""
     return True
 
-# --- Unpacked handler helpers (moved out of class for clarity and to avoid staticmethod misuse) ---
+# --- Registry and Subscription System ---
 class Registry:
+    """Global registry for all signal subscriptions and overrides."""
     class Subscription:
+        """Base subscription type for signal handlers."""
         def __init__(
             self,
             sub_id: str,
@@ -61,14 +69,17 @@ class Registry:
             return self.filter_func(signal, payload)
 
     class BaldSubscription(Subscription):
+        """Subscription for handlers with only (signal) argument."""
         def _call_handler(self, signal: Any, payload: Payload = None) -> Any:
             return self.handler(signal)
 
     class LoadedSubscription(Subscription):
+        """Subscription for handlers with (signal, payload) arguments."""
         def _call_handler(self, signal: Any, payload: Payload = None) -> Any:
             return self.handler(signal, payload)
 
     class UnpackedSubscription(Subscription):
+        """Subscription for handlers with unpacked payload arguments."""
         def _call_handler(self, signal: Any, payload: Payload = None) -> Any:
             return self._call_with_signature(self.handler, signal, payload)
 
@@ -121,18 +132,19 @@ class Registry:
             return self.overrides[cls].pop()
         return None
 
-# Module-level singleton
+# --- Module-level singleton registry ---
 _registry: Registry | None = None
 
 def get_registry() -> Registry:
+    """Get the global registry singleton."""
     global _registry
     if _registry is None:
         _registry = Registry()
     return _registry
 
-# --- BaseSignal ---
+# --- BaseSignal: main API for signals ---
 class BaseSignal(BaseModel):
-    # Use global registry for subscriptions and overrides
+    """Base class for all signals. Use subclassing to define new signals."""
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         cls.get_registry().ensure(cls)
@@ -143,6 +155,7 @@ class BaseSignal(BaseModel):
         return get_registry()
 
     def emit(self, **kwargs: Any) -> None:
+        """Emit this signal, calling all subscribed handlers."""
         seen: set[Callable] = set()
         for cls in self.__class__.mro():
             for subscription in self.get_registry().get_subs(cls):
@@ -160,13 +173,7 @@ class BaseSignal(BaseModel):
         fn: Callable[[Any, Any], bool] = default_filter,
         once: bool = False,
     ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-        """
-        Decorator-friendly API for subscribing a handler to a Signal class.
-        Usage:
-            @SomeSignal.subscribe(fn=...)
-            def handler(...): ...
-        Returns the handler (not an id).
-        """
+        """Decorator-friendly API for subscribing a handler to a Signal class."""
         def decorator(cb: Callable[..., Any]) -> Callable[..., Any]:
             _subscribe_internal(cls, cb, filter_func=fn, once=once)
             return cb
@@ -174,10 +181,12 @@ class BaseSignal(BaseModel):
 
     @classmethod
     def unsubscribe(cls, sub_id: str) -> None:
+        """Unsubscribe a handler by its subscription id."""
         cls.get_registry().remove_sub(cls, sub_id)
 
     @classmethod
     def override(cls, sub_id: str, new: Callable[..., Any]):
+        """Override a handler for a given subscription id."""
         subs = cls.get_registry().get_subs(cls)
         for i, sub in enumerate(subs):
             if sub.sub_id == sub_id:
@@ -208,6 +217,7 @@ class BaseSignal(BaseModel):
 
     @classmethod
     def revert_last_override(cls):
+        """Revert the most recent override for this signal class."""
         popped = cls.get_registry().pop_override(cls)
         if not popped:
             return
@@ -242,6 +252,7 @@ class BaseSignal(BaseModel):
     @classmethod
     @contextmanager
     def override_block(cls, old, new):
+        """Context manager for temporary handler override."""
         cls.override(old, new)
         try:
             yield
@@ -287,8 +298,9 @@ def subscribe(
     filter_func: Callable[[Any, Any], bool] = default_filter,
     once: bool = False,
 ) -> str:
+    """Imperative API for subscribing a handler to a Signal class."""
     return _subscribe_internal(signal_cls, callback, filter_func=filter_func, once=once)
 
-# Alias: all user-defined signals should subclass this
+# --- User-facing Signal base class ---
 class Signal(BaseSignal):
-    pass
+    """All user-defined signals should subclass this."""
