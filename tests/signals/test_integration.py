@@ -34,7 +34,7 @@ def test_filter_with_payload() -> None:
     class Filt(Signal):
         y: int
     seen: list[tuple[int, Any]] = []
-    @Filt.subscribe(filter=lambda s, p: bool(p and p.get("flag")))
+    @Filt.subscribe(fn=lambda s, p: bool(p and p.get("flag")))
     def handler(signal, flag=None) -> None:
         seen.append((signal.y, flag))
     Filt(y=1).emit(flag=False)

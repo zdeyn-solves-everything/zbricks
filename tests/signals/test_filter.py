@@ -7,7 +7,7 @@ def test_filtered_subscription():
 
     levels = []
 
-    @Note.subscribe(filter=lambda s, _: s.level == "warn")
+    @Note.subscribe(fn=lambda s, _: s.level == "warn")
     def handler(signal):
         levels.append(signal.level)
 
