@@ -1,9 +1,23 @@
 import inspect
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import Any, TypeVar, ClassVar
+from typing import Any, TypeVar
+
 from pydantic import BaseModel
+
+from zbricks.introspection import (
+    build_call_kwargs as _build_call_kwargs,
+)
+from zbricks.introspection import (
+    call_single_param as _call_single_param,
+)
+from zbricks.introspection import (
+    get_params as _get_params,
+)
+from zbricks.introspection import (
+    is_single_payload_param as _is_single_payload_param,
+)
 
 __all__ = ["BaseSignal", "Signal", "subscribe"]
 
@@ -15,34 +29,48 @@ Payload = dict[str, Any] | None
 def default_filter(signal: Any, payload: Payload = None) -> bool:
     return True
 
+# --- Unpacked handler helpers (moved out of class for clarity and to avoid staticmethod misuse) ---
 class Registry:
     class Subscription:
         def __init__(
             self,
             sub_id: str,
             handler: Callable[..., Any],
-            call_style: str,
             filter_func: Callable[[Any, Any], bool],
             user_handler: Callable[..., Any],
+            signal_cls: type["BaseSignal"],
+            once: bool = False,
         ):
             self.sub_id = sub_id
             self.handler = handler
-            self.call_style = call_style
             self.filter_func = filter_func
             self.user_handler = user_handler
+            self.signal_cls = signal_cls
+            self.once = once
 
         def call(self, signal: Any, payload: Payload = None) -> Any:
-            if self.call_style == "bald":
-                return self.handler(signal)
-            elif self.call_style == "loaded":
-                return self.handler(signal, payload)
-            elif self.call_style == "unpacked":
-                return self._call_with_signature(self.handler, signal, payload)
-            else:
-                raise RuntimeError(f"Unknown call style: {self.call_style}")
+            result = self._call_handler(signal, payload)
+            if self.once:
+                get_registry().remove_sub(self.signal_cls, self.sub_id)
+            return result
+
+        def _call_handler(self, signal: Any, payload: Payload = None) -> Any:
+            return self.handler(signal, payload)
 
         def passes_filter(self, signal: Any, payload: Payload) -> bool:
             return self.filter_func(signal, payload)
+
+    class BaldSubscription(Subscription):
+        def _call_handler(self, signal: Any, payload: Payload = None) -> Any:
+            return self.handler(signal)
+
+    class LoadedSubscription(Subscription):
+        def _call_handler(self, signal: Any, payload: Payload = None) -> Any:
+            return self.handler(signal, payload)
+
+    class UnpackedSubscription(Subscription):
+        def _call_handler(self, signal: Any, payload: Payload = None) -> Any:
+            return self._call_with_signature(self.handler, signal, payload)
 
         @staticmethod
         def _call_with_signature(
@@ -51,47 +79,12 @@ class Registry:
             payload: Payload,
         ) -> Any:
             sig = inspect.signature(cb)
-            params = list(sig.parameters.values())
-            if params and params[0].name in ("self", "cls"):
-                params = params[1:]
-            if params:
-                params = params[1:]
+            params = _get_params(sig)
             if not params:
                 return cb(signal)
-            if (
-                len(params) == 1
-                and params[0].kind in (
-                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                    inspect.Parameter.KEYWORD_ONLY,
-                )
-            ):
-                if params[0].name == "payload":
-                    return cb(signal, payload)
-                else:
-                    if payload is None or params[0].name not in payload:
-                        if params[0].default is not inspect.Parameter.empty:
-                            return cb(signal, params[0].default)
-                        raise TypeError(
-                            f"Missing required payload key '{params[0].name}' "
-                            f"for handler '{cb.__name__}'"
-                        )
-                    return cb(signal, payload[params[0].name])
-            payload = payload or {}
-            call_kwargs = {}
-            for p in params:
-                if p.name in payload:
-                    call_kwargs[p.name] = payload[p.name]
-                elif p.default is not inspect.Parameter.empty:
-                    call_kwargs[p.name] = p.default
-                elif (
-                    p.annotation is not inspect.Parameter.empty
-                    and getattr(p.annotation, "__origin__", None) is type(None)
-                ):
-                    call_kwargs[p.name] = None
-                else:
-                    raise TypeError(
-                        f"Missing required payload key '{p.name}' for handler '{cb.__name__}'"
-                    )
+            if _is_single_payload_param(params):
+                return _call_single_param(cb, signal, payload, params[0])
+            call_kwargs = _build_call_kwargs(cb, params, payload)
             return cb(signal, **call_kwargs)
 
     def __init__(self):
@@ -195,19 +188,21 @@ class BaseSignal(BaseModel):
                     params = params[1:]
                 if params:
                     params = params[1:]
+                sub_cls: type[Registry.Subscription]
                 if not params:
-                    new_call_style = "bald"
+                    sub_cls = Registry.BaldSubscription
                 elif len(params) == 1 and params[0].kind in (
                     inspect.Parameter.POSITIONAL_OR_KEYWORD,
                     inspect.Parameter.KEYWORD_ONLY,
                 ):
-                    new_call_style = (
-                        "loaded" if params[0].name == "payload" else "unpacked"
-                    )
+                    if params[0].name == "payload":
+                        sub_cls = Registry.LoadedSubscription
+                    else:
+                        sub_cls = Registry.UnpackedSubscription
                 else:
-                    new_call_style = "unpacked"
-                subs[i] = Registry.Subscription(
-                    sub_id, new, new_call_style, sub.filter_func, new
+                    sub_cls = Registry.UnpackedSubscription
+                subs[i] = sub_cls(
+                    sub_id, new, sub.filter_func, new, cls, sub.once
                 )
                 return
 
@@ -226,19 +221,21 @@ class BaseSignal(BaseModel):
                     params = params[1:]
                 if params:
                     params = params[1:]
+                sub_cls: type[Registry.Subscription]
                 if not params:
-                    old_call_style = "bald"
+                    sub_cls = Registry.BaldSubscription
                 elif len(params) == 1 and params[0].kind in (
                     inspect.Parameter.POSITIONAL_OR_KEYWORD,
                     inspect.Parameter.KEYWORD_ONLY,
                 ):
-                    old_call_style = (
-                        "loaded" if params[0].name == "payload" else "unpacked"
-                    )
+                    if params[0].name == "payload":
+                        sub_cls = Registry.LoadedSubscription
+                    else:
+                        sub_cls = Registry.UnpackedSubscription
                 else:
-                    old_call_style = "unpacked"
-                subs[i] = Registry.Subscription(
-                    sub_id, old, old_call_style, sub.filter_func, old
+                    sub_cls = Registry.UnpackedSubscription
+                subs[i] = sub_cls(
+                    sub_id, old, sub.filter_func, old, cls, sub.once
                 )
                 return
 
@@ -265,48 +262,21 @@ def _subscribe_internal(
         params = params[1:]
     if params:
         params = params[1:]
+    sub_cls: type[Registry.Subscription]
     if not params:
-        call_style = "bald"
+        sub_cls = Registry.BaldSubscription
     elif len(params) == 1 and params[0].kind in (
         inspect.Parameter.POSITIONAL_OR_KEYWORD,
         inspect.Parameter.KEYWORD_ONLY,
     ):
-        call_style = (
-            "loaded" if params[0].name == "payload" else "unpacked"
-        )
+        if params[0].name == "payload":
+            sub_cls = Registry.LoadedSubscription
+        else:
+            sub_cls = Registry.UnpackedSubscription
     else:
-        call_style = "unpacked"
+        sub_cls = Registry.UnpackedSubscription
     sub_id = str(uuid.uuid4())
-    def unsubscribe():
-        subs = get_registry().get_subs(signal_cls)
-        for i, sub in enumerate(subs):
-            if sub.sub_id == sub_id:
-                subs.pop(i)
-                break
-    if once:
-        def wrapped_once(sig: Any, payload: Payload = None):
-            unsubscribe()
-            if call_style == "bald":
-                return callback(sig)
-            elif call_style == "loaded":
-                return callback(sig, payload)
-            elif call_style == "unpacked":
-                return Registry.Subscription._call_with_signature(
-                    callback, sig, dict(payload) if payload else None
-                )
-        handler = wrapped_once
-    else:
-        def wrapped_cb(sig: Any, payload: Payload = None):
-            if call_style == "bald":
-                return callback(sig)
-            elif call_style == "loaded":
-                return callback(sig, payload)
-            elif call_style == "unpacked":
-                return Registry.Subscription._call_with_signature(
-                    callback, sig, dict(payload) if payload else None
-                )
-        handler = wrapped_cb
-    sub = Registry.Subscription(sub_id, handler, call_style, filter_func, callback)
+    sub = sub_cls(sub_id, callback, filter_func, callback, signal_cls, once=once)
     get_registry().add_sub(signal_cls, sub)
     return sub_id
 
