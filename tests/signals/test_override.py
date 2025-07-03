@@ -1,5 +1,6 @@
 from zbricks.signals import Signal, subscribe
 
+
 def test_override_callback():
     class Ding(Signal):
         msg: str

@@ -1,5 +1,6 @@
 from zbricks.signals import Signal, subscribe
 
+
 def test_basic_subscription_and_emit():
     class SomethingHappened(Signal):
         who: str

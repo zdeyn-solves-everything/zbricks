@@ -1,5 +1,6 @@
 from zbricks.signals import Signal, subscribe
 
+
 def test_unsubscribe():
     class Ping(Signal):
         id: int

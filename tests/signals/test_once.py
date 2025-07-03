@@ -1,5 +1,6 @@
 from zbricks.signals import Signal
 
+
 def test_once_subscription():
     class Boom(Signal):
         key: int

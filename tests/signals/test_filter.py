@@ -1,5 +1,6 @@
 from zbricks.signals import Signal
 
+
 def test_filtered_subscription():
     class Note(Signal):
         level: str

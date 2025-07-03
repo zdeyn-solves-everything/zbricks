@@ -29,6 +29,7 @@ dev = [
     "mypy>=1.16.1",
     "pytest>=8.0",
     "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
     "pytest-doctestplus>=1.4.0",
     "ruff>=0.12.1",
 ]
@@ -47,4 +48,30 @@ packages = ["src/zbricks"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--doctest-modules --doctest-glob=README.md"
+addopts = "--doctest-modules --doctest-glob=README.md --cov=src/zbricks/signals --cov-report=term-missing"
+
+[tool.mypy]
+python_version = "3.13"
+check_untyped_defs = true
+ignore_missing_imports = true
+show_error_codes = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+exclude = [".venv", "__pycache__", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C90", "A", "C4", "DTZ", "PIE", "PT", "RUF", "SIM", "TCH", "TID", "T20", "Q"]
+ignore = []
+
+[tool.coverage.run]
+branch = true
+source = ["src/zbricks/signals"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
