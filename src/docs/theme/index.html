@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Docs Index{% endblock %}
+{% block content %}
+<h1>Documentation Index</h1>
+{% if docs %}
+<ul>
+{% for doc in docs %}
+  <li><a href="/{{ doc.slug }}">{{ doc.title }}</a></li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No documentation found. This is the default ZBricks docs experience.<br>
+Add Markdown files to <code>src/docs/content/</code> to get started.</p>
+{% endif %}
+{% endblock %}

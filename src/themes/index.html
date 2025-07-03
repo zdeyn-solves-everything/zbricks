@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Docs Index{% endblock %}
+{% block content %}
+<h1>Documentation Index</h1>
+<ul>
+{% for doc in docs %}
+  <li><a href="/docs/{{ doc.slug }}">{{ doc.title }}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}

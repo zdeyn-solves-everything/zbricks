@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}ZBricks Docs{% endblock %}</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        nav { margin-bottom: 2em; }
+        a { color: #0074d9; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/">Home</a>
+</nav>
+{% block content %}{% endblock %}
+</body>
+</html>
