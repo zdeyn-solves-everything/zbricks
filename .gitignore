@@ -1,8 +1,12 @@
 src/zbricks/_version.py
 uv.lock
+
 .python-version
 py.typed
 LICENSE
+
+.mypy_cache
+.ruff_cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
