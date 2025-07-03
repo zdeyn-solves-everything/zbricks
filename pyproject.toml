@@ -15,11 +15,6 @@ dependencies = [
     "uvicorn>=0.35.0",
 ]
 
-[project.optional-dependencies]
-examples = [
-    "httpie>=3.2.4",
-    "httpx>=0.28.1",
-]
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
@@ -49,13 +44,5 @@ version-file = "src/zbricks/_version.py"
 packages = ["src/zbricks"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "examples/*/tests"]
+testpaths = ["tests"]
 addopts = "--doctest-modules --doctest-glob=README.md"
-
-[tool.hatch.envs.examples]
-dependencies = [
-    "pytest>=8.0",
-    "pytest-asyncio>=1.0.0",
-    "httpx>=0.28.1",
-]
-
